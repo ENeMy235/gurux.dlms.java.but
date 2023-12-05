@@ -34,10 +34,7 @@
 
 package gurux.dlms.secure;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -116,6 +113,19 @@ public class GXCiphering implements GXICipher {
      * Client key agreement key pair.
      */
     private KeyPair keyAgreementKeyPair;
+
+
+    /**
+     * Server signing key.
+     */
+    private PublicKey serverSigningKey;
+
+    /**
+     * Server agreement key.
+     */
+    private PublicKey serverAgreementKey;
+
+
 
     /**
      * Used signing.
@@ -393,6 +403,37 @@ public class GXCiphering implements GXICipher {
      */
     public final void setKeyAgreementKeyPair(final KeyPair value) {
         keyAgreementKeyPair = value;
+    }
+
+
+    /**
+     * @return Server signing key.
+     */
+    public PublicKey getServerSigningKey() {
+        return serverSigningKey;
+    }
+
+    /**
+     * @param serverSigningKey
+     *            Server signing key.
+     */
+    public void setServerSigningKey(PublicKey serverSigningKey) {
+        this.serverSigningKey = serverSigningKey;
+    }
+
+    /**
+     * @return Server agreement key.
+     */
+    public PublicKey getServerAgreementKey() {
+        return serverAgreementKey;
+    }
+
+    /**
+     * @param serverAgreementKey
+     *            Server agreement key.
+     */
+    public void setServerAgreementKey(PublicKey serverAgreementKey) {
+        this.serverAgreementKey = serverAgreementKey;
     }
 
     /**

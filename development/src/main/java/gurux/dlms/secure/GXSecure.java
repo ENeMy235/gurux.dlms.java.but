@@ -70,6 +70,7 @@ import gurux.dlms.asn.GXAsn1BitString;
 import gurux.dlms.asn.GXAsn1Converter;
 import gurux.dlms.asn.GXAsn1Integer;
 import gurux.dlms.asn.GXAsn1Sequence;
+import gurux.dlms.asn.enums.KeyUsage;
 import gurux.dlms.enums.Authentication;
 import gurux.dlms.enums.Command;
 import gurux.dlms.enums.CryptoKeyType;
@@ -306,8 +307,7 @@ public final class GXSecure {
                 if (cipher.getSigningKeyPair() == null) {
                     throw new IllegalArgumentException("SigningKeyPair is empty.");
                 }
-                System.out.println(GXCommon
-                        .toHex(GXAsn1Converter.rawValue(cipher.getSigningKeyPair().getPrivate())));
+//                System.out.println(GXCommon.toHex(GXAsn1Converter.rawValue(cipher.getSigningKeyPair().getPrivate())));
                 sig.initSign(cipher.getSigningKeyPair().getPrivate());
                 sig.update(secret);
                 d = sig.sign();
@@ -802,76 +802,82 @@ public final class GXSecure {
                 if (cmd == Command.GENERAL_CIPHERING) {
                     // KeyInfo OPTIONAL
                     // len =
-                    data.getUInt8();
-                    // AgreedKey CHOICE tag.
-                    data.getUInt8();
-                    // key-parameters
-                    // len =
-                    data.getUInt8();
-                    value = data.getUInt8();
-                    p.setKeyParameters(value);
-                    if (value == KeyAgreementScheme.ONE_PASS_DIFFIE_HELLMAN.ordinal()) {
-                        p.getSettings().getCipher().setSigning(Signing.ONE_PASS_DIFFIE_HELLMAN);
-                        // key-ciphered-data
-                        len = GXCommon.getObjectCount(data);
-                        GXByteBuffer bb = new GXByteBuffer();
-                        bb.set(data, len);
-                        if (p.getXml() != null) {
-                            p.setKeyCipheredData(bb.array());
-                        }
-                        kp = p.getSettings().getCipher().getKeyAgreementKeyPair();
-                        if (kp == null || kp.getPublic() == null) {
-                            pub = (PublicKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
-                                    p.getSystemTitle(), false);
-                            if (pub != null) {
-                                p.getSettings().getCipher().setKeyAgreementKeyPair(
-                                        new KeyPair(pub, p.getSettings().getCipher()
-                                                .getKeyAgreementKeyPair().getPrivate()));
+
+                    short KeyInfoLen = data.getUInt8();
+                    if (KeyInfoLen != 0) {
+                        data.getUInt8();
+                        // AgreedKey CHOICE tag.
+                        data.getUInt8();
+                        // key-parameters
+                        // len =
+                        data.getUInt8();
+                        value = data.getUInt8();
+                        p.setKeyParameters(value);
+                        if (value == KeyAgreementScheme.ONE_PASS_DIFFIE_HELLMAN.ordinal()) {
+                            p.getSettings().getCipher().setSigning(Signing.ONE_PASS_DIFFIE_HELLMAN);
+                            // key-ciphered-data
+                            len = GXCommon.getObjectCount(data);
+                            GXByteBuffer bb = new GXByteBuffer();
+                            bb.set(data, len);
+                            if (p.getXml() != null) {
+                                p.setKeyCipheredData(bb.array());
                             }
-                        }
-                        if (kp.getPrivate() == null) {
-                            key = (PrivateKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
-                                    p.getSystemTitle(), true);
-                            if (key != null) {
-                                p.getSettings().getCipher()
-                                        .setKeyAgreementKeyPair(new KeyPair(p.getSettings()
-                                                .getCipher().getKeyAgreementKeyPair().getPublic(),
-                                                key));
+                            kp = p.getSettings().getCipher().getKeyAgreementKeyPair();
+                            if (kp == null || kp.getPublic() == null) {
+                                pub = (PublicKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
+                                        p.getSystemTitle(), false);
+                                if (pub != null) {
+                                    p.getSettings().getCipher().setKeyAgreementKeyPair(
+                                            new KeyPair(pub, p.getSettings().getCipher()
+                                                    .getKeyAgreementKeyPair().getPrivate()));
+                                }
                             }
-                        }
-                        if (kp.getPublic() != null) {
-                            // Get Ephemeral public key.
-                            int keySize = len / 2;
-                            pub = GXAsn1Converter.getPublicKey(bb.subArray(0, keySize));
-                        }
-                    } else if (value == KeyAgreementScheme.STATIC_UNIFIED_MODEL.ordinal()) {
-                        p.getSettings().getCipher().setSigning(Signing.STATIC_UNIFIED_MODEL);
-                        len = GXCommon.getObjectCount(data);
-                        if (len != 0) {
-                            throw new IllegalArgumentException("Invalid key parameters");
-                        }
-                        kp = p.getSettings().getCipher().getKeyAgreementKeyPair();
-                        if (kp == null || kp.getPublic() == null) {
-                            pub = (PublicKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
-                                    p.getSystemTitle(), false);
-                        } else {
-                            pub = p.getSettings().getCipher().getKeyAgreementKeyPair().getPublic();
-                        }
-                        if (kp.getPrivate() == null) {
-                            key = (PrivateKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
-                                    p.getRecipientSystemTitle(), true);
-                        } else {
-                            key = p.getSettings().getCipher().getKeyAgreementKeyPair().getPrivate();
-                        }
-                        if (kp.getPublic() == null || kp.getPrivate() == null) {
-                            kp = new KeyPair(pub, key);
-                            p.getSettings().getCipher().setKeyAgreementKeyPair(kp);
+                            if (kp.getPrivate() == null) {
+                                key = (PrivateKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
+                                        p.getSystemTitle(), true);
+                                if (key != null) {
+                                    p.getSettings().getCipher()
+                                            .setKeyAgreementKeyPair(new KeyPair(p.getSettings()
+                                                    .getCipher().getKeyAgreementKeyPair().getPublic(),
+                                                    key));
+                                }
+                            }
+                            if (kp.getPublic() != null) {
+                                // Get Ephemeral public key.
+                                int keySize = len / 2;
+                                pub = GXAsn1Converter.getPublicKey(bb.subArray(0, keySize));
+                            }
+                        } else if (value == KeyAgreementScheme.STATIC_UNIFIED_MODEL.ordinal()) {
+                            p.getSettings().getCipher().setSigning(Signing.STATIC_UNIFIED_MODEL);
+                            len = GXCommon.getObjectCount(data);
+                            if (len != 0) {
+                                throw new IllegalArgumentException("Invalid key parameters");
+                            }
+                            kp = p.getSettings().getCipher().getKeyAgreementKeyPair();
+                            if (kp == null || kp.getPublic() == null) {
+                                pub = (PublicKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
+                                        p.getSystemTitle(), false);
+                            } else {
+                                pub = p.getSettings().getCipher().getKeyAgreementKeyPair().getPublic();
+                            }
+                            if (kp.getPrivate() == null) {
+                                key = (PrivateKey) p.getSettings().getKey(CertificateType.KEY_AGREEMENT,
+                                        p.getRecipientSystemTitle(), true);
+                            } else {
+                                key = p.getSettings().getCipher().getKeyAgreementKeyPair().getPrivate();
+                            }
+                            if (kp.getPublic() == null || kp.getPrivate() == null) {
+                                kp = new KeyPair(pub, key);
+                                p.getSettings().getCipher().setKeyAgreementKeyPair(kp);
+                            }
                         }
                     }
                 } else {
                     // Update security because server needs it and client when
                     // push message is received.
-                    p.getSettings().getCipher().setSigning(Signing.GENERAL_SIGNING);
+
+                    //This brakes the connection, when is GENERAL_SIGNING not used
+//                    p.getSettings().getCipher().setSigning(Signing.GENERAL_SIGNING);
                     kp = p.getSettings().getCipher().getSigningKeyPair();
                     if (kp.getPublic() == null || kp.getPrivate() == null) {
                         if (kp.getPublic() == null) {
@@ -1098,12 +1104,16 @@ public final class GXSecure {
                 p.setSignature(s);
                 LOGGER.log(Level.FINEST, "Verifying signature for sender: {0}",
                         GXCommon.toHex(p.getSystemTitle(), true));
+
+                PublicKey publicKey = p.getSettings().getCipher().getCertificates().
+                        findBySystemTitle(p.getSystemTitle(), KeyUsage.DIGITAL_SIGNATURE).getPublicKey();
+
                 if (p.getXml() == null) {
-                    if (kp.getPublic() == null) {
+                    if (publicKey == null) {
                         throw new IllegalArgumentException("Public key is not set.");
                     }
                     if (!validateEphemeralPublicKeySignature(signedData.array(), p.getSignature(),
-                            kp.getPublic())) {
+                            publicKey)) {
                         throw new Exception("Invalid signature.");
                     }
                 } else {

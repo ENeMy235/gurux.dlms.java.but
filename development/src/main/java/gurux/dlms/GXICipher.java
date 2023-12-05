@@ -35,6 +35,7 @@
 package gurux.dlms;
 
 import java.security.KeyPair;
+import java.security.PublicKey;
 
 import gurux.dlms.asn.GXx509CertificateCollection;
 import gurux.dlms.enums.Security;
@@ -195,6 +196,28 @@ public interface GXICipher {
      *            Signing key pair.
      */
     void setSigningKeyPair(KeyPair value);
+
+    /**
+     * @return Server Agreement public key.
+     */
+    PublicKey getServerSigningKey();
+
+    /**
+     * @param value
+     *            Server signing public key.
+     */
+    void setServerSigningKey(PublicKey value);
+
+    /**
+     * @return Server agreement public key.
+     */
+    PublicKey getServerAgreementKey();
+
+    /**
+     * @param value
+     *            Server agreement public key.
+     */
+    void setServerAgreementKey(PublicKey value);
 
     /**
      * @return TLS signing key pair.

@@ -59,6 +59,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import gurux.dlms.asn.GXAsn1Converter;
 import gurux.dlms.asn.GXAsn1Integer;
+import gurux.dlms.asn.enums.KeyUsage;
 import gurux.dlms.enums.AccessMode;
 import gurux.dlms.enums.AccessMode3;
 import gurux.dlms.enums.AccessServiceCommandType;
@@ -1134,8 +1135,16 @@ public class GXDLMSClient {
                     try {
                         Signature ver =
                                 Signature.getInstance("SHA256withECDSA");
-                        ver.initVerify(settings.getCipher().getSigningKeyPair()
-                                .getPublic());
+
+                        PublicKey pub = settings.getCipher().getServerSigningKey();
+
+                        if(pub == null) {
+                            pub = settings.getCipher().getCertificates().
+                                    findBySystemTitle(settings.getSourceSystemTitle(),
+                                            KeyUsage.DIGITAL_SIGNATURE).getPublicKey();
+                        }
+
+                        ver.initVerify(pub);
                         GXByteBuffer bb = new GXByteBuffer();
                         bb.set(settings.getSourceSystemTitle());
                         bb.set(settings.getCipher().getSystemTitle());
@@ -3172,7 +3181,7 @@ public class GXDLMSClient {
      * @return Created object.
      */
     public static GXDLMSObject createObject(final ObjectType type) {
-        return GXDLMS.createObject(type);
+        return CreateObject.fromObjectType(type);
     }
 
     /**
